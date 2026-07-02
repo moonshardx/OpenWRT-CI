@@ -62,3 +62,36 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 		echo "qualcommax set up nowifi successfully!"
 	fi
 fi
+
+#X86 预设 4 口网络布局：eth0/eth1/eth2=LAN 桥, eth3=WAN(PPPoE)；LAN IP 192.168.66.1
+#通过首刷执行一次的 uci-defaults 注入（跑完自删）；PPPoE 账密故意不写，刷完在 LuCI 里填
+if [[ "${WRT_CONFIG^^}" == *"X86"* ]]; then
+	mkdir -p ./files/etc/uci-defaults
+	cat > ./files/etc/uci-defaults/99-custom-network <<'DEFAULTS'
+#!/bin/sh
+# 清除 config_generate 自动生成的 bridge 设备段后重建，避免口序不一致
+while uci -q delete network.@device[0]; do :; done
+uci batch <<'EOF'
+add network device
+set network.@device[-1].name='br-lan'
+set network.@device[-1].type='bridge'
+add_list network.@device[-1].ports='eth0'
+add_list network.@device[-1].ports='eth1'
+add_list network.@device[-1].ports='eth2'
+set network.lan=interface
+set network.lan.device='br-lan'
+set network.lan.proto='static'
+set network.lan.ipaddr='192.168.66.1'
+set network.lan.netmask='255.255.255.0'
+set network.lan.ip6assign='64'
+set network.wan=interface
+set network.wan.device='eth3'
+set network.wan.proto='pppoe'
+set network.wan.ipv6='0'
+EOF
+uci -q delete network.wan6
+uci commit network
+exit 0
+DEFAULTS
+	echo "x86 custom network (eth0/1/2=LAN br, eth3=WAN pppoe, 192.168.66.1) injected!"
+fi
