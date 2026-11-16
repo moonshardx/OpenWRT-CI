@@ -58,6 +58,19 @@ https://drive.wrt.moe/uboot/mediatek
 
 已同步 CI 上游 `VIKINGYFY/OpenWRT-CI` 的 `6a66469`，保留以上定制。其他平台配置与手动构建入口仍保留。
 
+## N100 网络调优
+
+X86 固件通过 `Scripts/X86-Tune.sh` 生成并启用 `net_turbo` 服务及网络热插拔脚本。构建时使用 `DESTDIR`，仅生成固件文件，不修改构建主机网络。该脚本与本地维护的 `openwrt/x86/openwrt-optimize.sh` 保持一致。
+
+- 物理网卡使用 `packet_steering=2`，允许四核处理收包；PPPoE、Mihomo TUN、Tailscale 和 `wg0` 使用四核 RPS。
+- SQM 新配置默认下载 `1000000`、上传 `50000` kbit/s；已有带宽值保留。
+- PPPoE 使用 CAKE `overhead 46`、`mpu 84`；接口名包含 VLAN 后缀时使用 `overhead 50`。
+- 保留 BBR/fq、CPU 自适应调频和关闭 flow offloading 的设置。
+- 热插拔脚本处理 TUN、PPPoE、Tailscale 和 `wg0` 的重新创建，Mihomo TUN MTU 保持 1460。
+
+在已运行的路由器上执行安装脚本会应用配置并重启 SQM，应在允许短暂网络抖动时操作。它不会主动重新拨号或重启 Nikki。不要把旧版 `net_turbo` 文件加入升级保留列表，以免覆盖新固件内的版本。
+
+
 # 目录简要说明
 
 workflows——自定义CI配置

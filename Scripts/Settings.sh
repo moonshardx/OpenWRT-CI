@@ -55,6 +55,7 @@ fi
 #X86 预设 4 口网络布局：eth0/eth1/eth2=LAN 桥, eth3=WAN(PPPoE)；LAN IP 192.168.66.1
 #通过首刷执行一次的 uci-defaults 注入（跑完自删）；PPPoE 账密故意不写，刷完在 LuCI 里填
 if [[ "${WRT_CONFIG^^}" == *"X86"* ]]; then
+	DESTDIR="$PWD/files" sh "$GITHUB_WORKSPACE/Scripts/X86-Tune.sh"
 	mkdir -p ./files/etc/uci-defaults
 	cat > ./files/etc/uci-defaults/99-custom-network <<'DEFAULTS'
 #!/bin/sh
